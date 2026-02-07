@@ -1,0 +1,49 @@
+# Git files
+.git
+.gitignore
+
+# Node modules (will be installed fresh in Docker)
+node_modules
+npm-debug.log
+npm-cache
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Development files
+.eslintrc
+.prettierrc
+.editorconfig
+
+# Compiled JavaScript (will be rebuilt in Docker)
+dist/
+*.js.map
+
+# Documentation
+README.md
+CONTRIBUTING.md
+LICENSE
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# Test files
+test
+tests
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+coverage
