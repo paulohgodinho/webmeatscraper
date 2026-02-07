@@ -4,22 +4,29 @@
  */
 
 import { chromium, Browser, Page } from 'playwright';
+import { meatExtractor } from 'meatscraper';
 
 interface ScraperOptions {
   timeout?: number;
   waitFor?: string | null;
 }
 
+interface ExtractedData {
+  content: string;
+  image: string | null;
+  metadata: Record<string, any>;
+}
+
 /**
- * Scrape a URL and return its full HTML content
+ * Scrape a URL and return extracted content data
  * @param url - The URL to scrape
  * @param options - Optional configuration
  * @param options.timeout - Timeout in milliseconds (default: 30000)
  * @param options.waitFor - CSS selector to wait for (optional)
- * @returns The full HTML content of the page
+ * @returns The extracted content, image, and metadata from the page
  * @throws {Error} If the URL is invalid or scraping fails
  */
-async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<string> {
+async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<ExtractedData> {
   const { timeout = 30000, waitFor = null } = options;
 
   // Validate URL
@@ -49,7 +56,10 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<str
     // Get the full HTML content
     const html = await page.content();
 
-    return html;
+    // Extract structured content using meatscraper
+    const extractedData = await meatExtractor(html);
+
+    return extractedData;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -93,4 +103,5 @@ export {
   scrapeUrl,
   isValidUrl,
   ScraperOptions,
+  ExtractedData,
 };

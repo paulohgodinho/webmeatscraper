@@ -1,8 +1,6 @@
 # Dependencies
 node_modules/
-npm-debug.log
-npm-cache/
-package-lock.json
+yarn-error.log
 
 # Build output
 dist/

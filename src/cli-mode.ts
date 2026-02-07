@@ -13,9 +13,9 @@ import { scrapeUrl } from './scraper';
 async function runCliMode(url: string): Promise<never> {
   try {
     console.error(`Scraping: ${url}`);
-    const html = await scrapeUrl(url);
-    // Output HTML to stdout
-    console.log(html);
+    const data = await scrapeUrl(url);
+    // Output extracted data as JSON to stdout
+    console.log(JSON.stringify(data, null, 2));
     process.exit(0);
   } catch (error) {
     // Output error to stderr

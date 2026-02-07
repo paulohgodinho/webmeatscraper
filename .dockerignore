@@ -4,8 +4,7 @@
 
 # Node modules (will be installed fresh in Docker)
 node_modules
-npm-debug.log
-npm-cache
+yarn-error.log
 
 # IDE and editor files
 .vscode

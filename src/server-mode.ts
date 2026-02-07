@@ -4,7 +4,7 @@
  */
 
 import express, { Request, Response, NextFunction } from 'express';
-import { scrapeUrl, isValidUrl } from './scraper';
+import { scrapeUrl, isValidUrl, ExtractedData } from './scraper';
 
 const PORT = 7878;
 
@@ -18,9 +18,7 @@ interface ErrorResponse {
   example?: { url: string };
 }
 
-interface SuccessResponse {
-  html: string;
-}
+type SuccessResponse = ExtractedData;
 
 /**
  * Run the scraper in server mode
@@ -66,10 +64,10 @@ async function runServerMode(): Promise<never> {
        }
 
        // Scrape the URL
-       const html = await scrapeUrl(url);
+       const data = await scrapeUrl(url);
 
-       // Return successful response
-       res.json({ html });
+       // Return successful response with extracted data
+       res.json(data);
      } catch (error) {
        // Return error response with 500 status
        const errorMessage = error instanceof Error ? error.message : String(error);
