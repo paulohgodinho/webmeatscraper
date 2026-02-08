@@ -4,6 +4,8 @@
  */
 
 import { scrapeUrl } from './scraper';
+// @ts-ignore - meatscraper package.json exists
+import meatscraperPackage from 'meatscraper/package.json';
 
 /**
  * Run the scraper in CLI mode
@@ -12,6 +14,7 @@ import { scrapeUrl } from './scraper';
  */
 async function runCliMode(url: string): Promise<never> {
   try {
+    console.error(`Using meatscraper v${meatscraperPackage.version}`);
     console.error(`Scraping: ${url}`);
     const data = await scrapeUrl(url);
     // Output extracted data as JSON to stdout

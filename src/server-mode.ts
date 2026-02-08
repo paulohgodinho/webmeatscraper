@@ -5,6 +5,8 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import { scrapeUrl, isValidUrl, ExtractedData } from './scraper';
+// @ts-ignore - meatscraper package.json exists
+import meatscraperPackage from 'meatscraper/package.json';
 
 const PORT = 7878;
 
@@ -101,6 +103,7 @@ async function runServerMode(): Promise<never> {
   // Start the server - returns a promise that never resolves
   return new Promise<never>(() => {
     app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Using meatscraper v${meatscraperPackage.version}`);
       console.log(`Server started on port ${PORT}`);
       console.log(`Endpoints:`);
       console.log(`  - GET  /health              Health check`);
