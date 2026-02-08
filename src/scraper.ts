@@ -38,6 +38,9 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<Ext
   let page: Page | null = null;
 
   try {
+    // Track start time for performance metrics
+    const fetchStartTime = Date.now();
+    
     // Launch browser in headless mode
     browser = await chromium.launch({ headless: true });
     page = await browser.newPage();
@@ -55,6 +58,16 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<Ext
 
     // Get the full HTML content
     const html = await page.content();
+
+    // Debug: Print full HTML if DEBUG environment variable is set
+    if (process.env.DEBUG) {
+      const fetchEndTime = Date.now();
+      const fetchDuration = fetchEndTime - fetchStartTime;
+      
+      console.error(`[DEBUG] URL: ${url}`);
+      console.error(`[DEBUG] Fetch took: ${fetchDuration}ms`);
+      console.error(html);
+    }
 
     // Extract structured content using meatscraper
     const extractedData = await meatExtractor(html);
