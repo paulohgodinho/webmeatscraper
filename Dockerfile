@@ -9,21 +9,12 @@ WORKDIR /app
 # This way, dependencies are cached and only re-installed if package files change
 COPY package.json yarn.lock ./
 
-# Switch to root user for installing global packages and building
-# The base image uses 'myuser' by default, but we need root for npm global install
+# Switch to root user for installing packages and building
 USER root
 
-# Install TypeScript globally so it's available for all build steps
-RUN npm install -g typescript@5.3.3
-
-# Install dependencies - meatscraper build will fail but that's ok, we'll rebuild it
-RUN yarn install --frozen-lockfile || true
-
-# Build meatscraper manually since its postinstall script failed
-# Override strict mode to work around missing type definitions
-RUN cd node_modules/meatscraper && \
-    tsc --strict false && \
-    cd /app
+# Install all dependencies (including devDependencies for building)
+# The base image sets NODE_ENV=production, so we need to override it temporarily
+RUN NODE_ENV= yarn install --frozen-lockfile
 
 # Copy the application source code
 # This is done after yarn install so that code changes don't invalidate the dependency cache
@@ -33,15 +24,10 @@ COPY src ./src
 COPY tsconfig.json ./
 
 # Build TypeScript to JavaScript
-# Disable noImplicitAny to work around missing @types/express and @types/node
-RUN tsc --noImplicitAny false
+RUN ./node_modules/.bin/tsc
 
 # Remove dev dependencies to keep the final image small
-# meatscraper will fail to build again, so we'll use || true and rebuild it next
-RUN yarn install --production --frozen-lockfile || true
-
-# Rebuild meatscraper since production install removed the dist folder
-RUN cd node_modules/meatscraper && tsc --strict false && cd /app
+RUN yarn install --production --frozen-lockfile
 
 # Expose port 7878 for the web server
 # This doesn't actually publish the port, but documents that the app uses this port

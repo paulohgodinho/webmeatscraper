@@ -1451,9 +1451,10 @@ mdn-data@2.12.2:
   resolved "https://registry.yarnpkg.com/mdn-data/-/mdn-data-2.12.2.tgz#9ae6c41a9e65adf61318b32bff7b64fbfb13f8cf"
   integrity sha512-IEn+pegP1aManZuckezWCO+XZQDplx1366JoVhTpMpBB1sPey/SbveZQUosKiKiGYjg1wH4pMlNgXbCiYgihQA==
 
-"meatscraper@https://github.com/paulohgodinho/meatscraper":
+meatscraper@^1.0.0:
   version "1.0.0"
-  resolved "https://github.com/paulohgodinho/meatscraper#ef1ba46bc8fbefb3e9910325ebb3179515fe62cd"
+  resolved "https://registry.yarnpkg.com/meatscraper/-/meatscraper-1.0.0.tgz#fddb16f80d30336293f38043affb397221897147"
+  integrity sha512-iQWHjUGg0Wp55ctpk0THTPdkIwLrYSIhgNBe2SnxqaG+b86v4Hp+srmuBqV3Eb+Z68UDDM6fsCeLmM83KttOtA==
   dependencies:
     "@mozilla/readability" "^0.6.0"
     "@types/express" "^5.0.6"
