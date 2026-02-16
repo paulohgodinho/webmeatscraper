@@ -1,6 +1,6 @@
 # Specify the base Docker image with Playwright and Chrome pre-installed
-# Using Node.js 20 and Playwright Chrome image
-FROM apify/actor-node-playwright-chrome:20
+# Using Node.js 24 and Playwright Chrome image
+FROM apify/actor-node-playwright-chrome:24
 
 # Set working directory
 WORKDIR /app
@@ -29,9 +29,7 @@ RUN ./node_modules/.bin/tsc
 # Remove dev dependencies to keep the final image small
 RUN yarn install --production --frozen-lockfile
 
-# Expose port 7878 for the web server
-# This doesn't actually publish the port, but documents that the app uses this port
-EXPOSE 7878
+# Port is configurable via WEBMEATSCRAPER_PORT environment variable (default: 42452)
 
 # Set the entry point
 # This will run the application and pass arguments directly

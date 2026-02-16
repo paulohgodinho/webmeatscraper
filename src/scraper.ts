@@ -27,7 +27,7 @@ interface ExtractedData {
  * @throws {Error} If the URL is invalid or scraping fails
  */
 async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<ExtractedData> {
-  const { timeout = 30000, waitFor = null } = options;
+  const { timeout = 60000, waitFor = null } = options;
 
   // Validate URL
   if (!isValidUrl(url)) {
@@ -45,19 +45,35 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<Ext
     browser = await chromium.launch({ headless: true });
     page = await browser.newPage();
 
-    // Navigate to the URL with timeout and wait for network to be idle
-    await page.goto(url, {
-      waitUntil: 'networkidle',
-      timeout: timeout,
-    });
+    let html: string;
 
-    // Wait for optional selector if provided
-    if (waitFor) {
-      await page.waitForSelector(waitFor, { timeout: timeout });
+    try {
+      // Navigate to the URL with timeout and wait for network to be idle
+      await page.goto(url, {
+        waitUntil: 'networkidle',
+        timeout: timeout,
+      });
+
+      // Wait for optional selector if provided
+      if (waitFor) {
+        await page.waitForSelector(waitFor, { timeout: timeout });
+      }
+
+      // Get the full HTML content
+      html = await page.content();
+    } catch (error) {
+      if (isTimeoutError(error)) {
+        html = await page.content();
+        if (isEmptyContent(html)) {
+          throw new Error(`Timeout after 60s while trying to load: "${url}". No content received.`);
+        }
+        if (process.env.DEBUG) {
+          console.error(`[DEBUG] Timeout reached, using partial content (${html.length} chars)`);
+        }
+      } else {
+        throw error;
+      }
     }
-
-    // Get the full HTML content
-    const html = await page.content();
 
     // Debug: Print full HTML if DEBUG environment variable is set
     if (process.env.DEBUG) {
@@ -70,9 +86,13 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<Ext
     }
 
     // Extract structured content using meatscraper
-    const extractedData = await meatExtractor(html);
+    const extractedData = await meatExtractor(html, { url });
 
-    return extractedData;
+    return {
+      content: extractedData.content,
+      image: extractedData.metadata.image || null,
+      metadata: extractedData.metadata
+    };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -80,7 +100,7 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<Ext
     if (errorMessage.includes('net::ERR_NAME_NOT_RESOLVED')) {
       throw new Error(`DNS resolution failed for URL: "${url}"`);
     } else if (errorMessage.includes('Timeout')) {
-      throw new Error(`Timeout after ${timeout}ms while trying to load: "${url}"`);
+      throw new Error(`Timeout after ${Math.round(timeout / 1000)}s while trying to load: "${url}"`);
     } else if (errorMessage.includes('net::ERR_CONNECTION_REFUSED')) {
       throw new Error(`Connection refused for URL: "${url}"`);
     }
@@ -110,6 +130,31 @@ function isValidUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Check if an error is a Playwright timeout error
+ * @param error - The error to check
+ * @returns True if it's a timeout error, false otherwise
+ */
+function isTimeoutError(error: any): boolean {
+  return error.message && error.message.includes('Timeout');
+}
+
+/**
+ * Check if HTML content is empty or contains only empty HTML tags
+ * @param html - The HTML content to check
+ * @returns True if content is empty, false if it has meaningful content
+ */
+function isEmptyContent(html: string): boolean {
+  const trimmed = html.trim();
+  // Check for completely empty or very minimal content
+  if (trimmed.length < 50) {
+    return true;
+  }
+  // Check for basic empty HTML structure
+  const emptyHtmlPattern = /^<\s*html[^>]*>\s*(?:<\s*head[^>]*>.*?<\/head>\s*)?(?:<\s*body[^>]*>\s*<\/body>\s*)?<\/html>$/i;
+  return emptyHtmlPattern.test(trimmed);
 }
 
 export {

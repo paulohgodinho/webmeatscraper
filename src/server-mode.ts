@@ -1,6 +1,6 @@
 /**
  * Server mode handler
- * Runs an HTTP server on port 7878 that accepts scraping requests via JSON
+ * Runs an HTTP server on port 42452 (configurable via WEBMEATSCRAPER_PORT env var) that accepts scraping requests via JSON
  */
 
 import express, { Request, Response, NextFunction } from 'express';
@@ -8,7 +8,7 @@ import { scrapeUrl, isValidUrl, ExtractedData } from './scraper';
 // @ts-ignore - meatscraper package.json exists
 import meatscraperPackage from 'meatscraper/package.json';
 
-const PORT = 7878;
+const PORT = parseInt(process.env.WEBMEATSCRAPER_PORT || '42452', 10);
 
 interface ScrapeRequest {
   url?: string;

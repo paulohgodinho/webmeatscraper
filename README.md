@@ -49,7 +49,7 @@ node dist/main.js https://example.com
 
 ### Server Mode
 
-Run without arguments to start an HTTP server on port 7878:
+Run without arguments to start an HTTP server on port 42452 (configurable via `WEBMEATSCRAPER_PORT` environment variable):
 
 ```bash
 node dist/main.js
@@ -62,7 +62,7 @@ node dist/main.js
 
 **Example Request:**
 ```bash
-curl -X POST http://localhost:7878/scrape \
+curl -X POST http://localhost:42452/scrape \
   -H "Content-Type: application/json" \
   -d '{"url":"https://example.com"}'
 ```
@@ -101,8 +101,11 @@ Build and run the Docker container:
 # Build
 docker build -t webmeatscraper .
 
-# Run in server mode
-docker run -p 7878:7878 webmeatscraper
+# Run in server mode (default port 42452, or set WEBMEATSCRAPER_PORT)
+docker run -p 42452:42452 webmeatscraper
+
+# Run with custom port
+docker run -p 3000:3000 -e WEBMEATSCRAPER_PORT=3000 webmeatscraper
 
 # Run in CLI mode
 docker run webmeatscraper https://example.com
