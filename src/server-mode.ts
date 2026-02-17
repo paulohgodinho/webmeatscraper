@@ -52,10 +52,11 @@ async function runServerMode(): Promise<never> {
      * Exit endpoint - shuts down the server
      */
     app.get('/exit', (_req: Request, res: Response) => {
-      console.log('Exit endpoint called. Shutting down server...');
-      res.json({ status: 'shutting_down' });
+      console.log('\n🛑 SHUTDOWN COMMAND RECEIVED - Initiating server shutdown...');
+      res.json({ status: 'shutting_down', message: 'Server shutdown initiated' });
       // Give a moment for the response to be sent, then exit
       setTimeout(() => {
+        console.log('✅ Server shutdown complete. Goodbye!');
         process.exit(0);
       }, 100);
     });
