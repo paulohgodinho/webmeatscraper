@@ -10,6 +10,16 @@ import meatscraperPackage from 'meatscraper/package.json';
 
 const PORT = parseInt(process.env.WEBMEATSCRAPER_PORT || '42452', 10);
 
+/**
+ * Check if debug mode is enabled
+ * Returns true only for '1' or 'true' (case insensitive)
+ */
+function isDebugEnabled(): boolean {
+  const debugValue = process.env.DEBUG;
+  return debugValue !== undefined && 
+         (debugValue.toLowerCase() === '1' || debugValue.toLowerCase() === 'true');
+}
+
 interface ScrapeRequest {
   url?: string;
 }
@@ -31,12 +41,24 @@ async function runServerMode(): Promise<never> {
   // Middleware to parse JSON
   app.use(express.json());
 
-   /**
-    * Health check endpoint
-    */
-   app.get('/health', (_req: Request, res: Response) => {
-     res.json({ status: 'ok' });
-   });
+    /**
+     * Health check endpoint
+     */
+    app.get('/health', (_req: Request, res: Response) => {
+      res.json({ status: 'ok' });
+    });
+
+    /**
+     * Exit endpoint - shuts down the server
+     */
+    app.get('/exit', (_req: Request, res: Response) => {
+      console.log('Exit endpoint called. Shutting down server...');
+      res.json({ status: 'shutting_down' });
+      // Give a moment for the response to be sent, then exit
+      setTimeout(() => {
+        process.exit(0);
+      }, 100);
+    });
 
    /**
     * Main scraping endpoint
@@ -116,15 +138,15 @@ async function runServerMode(): Promise<never> {
       if (process.env.WEBMEATSCRAPER_PORT) {
         envVars.push(`WEBMEATSCRAPER_PORT=${process.env.WEBMEATSCRAPER_PORT}`);
       }
-      if (process.env.DEBUG) {
-        envVars.push(`DEBUG=${process.env.DEBUG}`);
-      }
+      // Always show DEBUG status
+      envVars.push(`DEBUG=${isDebugEnabled() ? 'true' : 'false'}`);
       if (envVars.length > 0) {
         console.log(`Environment: ${envVars.join(', ')}`);
       }
       
       console.log(`\nEndpoints:`);
       console.log(`  - GET  /health              Health check`);
+      console.log(`  - GET  /exit                Shut down server`);
       console.log(`  - POST /scrape              Scrape a URL`);
       console.log(`\nExample request:`);
       console.log(`  curl -X POST http://localhost:${PORT}/scrape \\`);

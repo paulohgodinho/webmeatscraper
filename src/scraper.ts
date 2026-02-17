@@ -6,6 +6,16 @@
 import { chromium, Browser, Page } from 'playwright';
 import { meatExtractor } from 'meatscraper';
 
+/**
+ * Check if debug mode is enabled
+ * Returns true only for '1' or 'true' (case insensitive)
+ */
+function isDebugEnabled(): boolean {
+  const debugValue = process.env.DEBUG;
+  return debugValue !== undefined && 
+         (debugValue.toLowerCase() === '1' || debugValue.toLowerCase() === 'true');
+}
+
 interface ScraperOptions {
   timeout?: number;
   waitFor?: string | null;
@@ -92,7 +102,7 @@ async function performScraping(url: string, timeout: number, waitFor: string | n
         if (isEmptyContent(html)) {
           throw new Error(`Page load timed out after ${Math.round((timeout - 5000) / 1000)}s: "${url}". No content was received from the server.`);
         }
-        if (process.env.DEBUG) {
+        if (isDebugEnabled()) {
           console.error(`[DEBUG] Timeout reached after ${Math.round((timeout - 5000) / 1000)}s, using partial content (${html.length} chars)`);
         }
       } else {
@@ -101,7 +111,7 @@ async function performScraping(url: string, timeout: number, waitFor: string | n
     }
 
     // Debug: Print full HTML if DEBUG environment variable is set
-    if (process.env.DEBUG) {
+    if (isDebugEnabled()) {
       const fetchEndTime = Date.now();
       const fetchDuration = fetchEndTime - fetchStartTime;
       
