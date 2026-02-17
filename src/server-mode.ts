@@ -103,9 +103,27 @@ async function runServerMode(): Promise<never> {
   // Start the server - returns a promise that never resolves
   return new Promise<never>(() => {
     app.listen(PORT, '0.0.0.0', () => {
+      const commitHash = process.env.COMMIT_HASH || 'unknown';
+
+      console.log(`Web Scraper Server`);
+      console.log(`==================`);
+      console.log(`Commit: ${commitHash}`);
       console.log(`Using meatscraper v${meatscraperPackage.version}`);
-      console.log(`Server started on port ${PORT}`);
-      console.log(`Endpoints:`);
+      console.log(`Port: ${PORT}`);
+      
+      // Show relevant environment variables
+      const envVars = [];
+      if (process.env.WEBMEATSCRAPER_PORT) {
+        envVars.push(`WEBMEATSCRAPER_PORT=${process.env.WEBMEATSCRAPER_PORT}`);
+      }
+      if (process.env.DEBUG) {
+        envVars.push(`DEBUG=${process.env.DEBUG}`);
+      }
+      if (envVars.length > 0) {
+        console.log(`Environment: ${envVars.join(', ')}`);
+      }
+      
+      console.log(`\nEndpoints:`);
       console.log(`  - GET  /health              Health check`);
       console.log(`  - POST /scrape              Scrape a URL`);
       console.log(`\nExample request:`);

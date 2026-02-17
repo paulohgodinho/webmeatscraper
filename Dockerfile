@@ -2,6 +2,10 @@
 # Using Node.js 24 and Playwright Chrome image
 FROM apify/actor-node-playwright-chrome:24
 
+# Set commit hash build arg
+ARG COMMIT_HASH=unknown
+ENV COMMIT_HASH=${COMMIT_HASH}
+
 # Set working directory
 WORKDIR /app
 
