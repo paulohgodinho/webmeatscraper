@@ -27,3 +27,4 @@ coverage/
 
 # OS
 Thumbs.db
+*.exe
