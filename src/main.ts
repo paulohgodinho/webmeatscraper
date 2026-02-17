@@ -35,3 +35,9 @@ main().catch((error) => {
   process.exit(1);
 });
 
+// Handle SIGINT (Ctrl+C) gracefully
+process.on('SIGINT', () => {
+  console.log('\nReceived SIGINT (Ctrl+C). Shutting down gracefully...');
+  process.exit(0);
+});
+

@@ -34,6 +34,31 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<Ext
     throw new Error(`Invalid URL: "${url}". Please provide a valid HTTP/HTTPS URL.`);
   }
 
+  // Perform browser health check
+  const healthCheckResult = await performBrowserHealthCheck();
+  if (!healthCheckResult) {
+    throw new Error('Browser health check failed: Unable to fetch test HTML. Browser may be misconfigured or network unavailable.');
+  }
+
+  // Overall operation timeout (10s buffer beyond page timeout)
+  const overallTimeout = timeout + 10000;
+
+  // Create timeout promise
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(`Overall scraping operation timed out after ${Math.round(overallTimeout / 1000)}s for "${url}".`)), overallTimeout);
+  });
+
+  // Main scraping logic as a promise
+  const scrapingPromise = performScraping(url, timeout, waitFor);
+
+  // Race them
+  return Promise.race([scrapingPromise, timeoutPromise]);
+}
+
+/**
+ * Perform the actual scraping operation
+ */
+async function performScraping(url: string, timeout: number, waitFor: string | null): Promise<ExtractedData> {
   let browser: Browser | null = null;
   let page: Page | null = null;
 
@@ -51,12 +76,12 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<Ext
       // Navigate to the URL with timeout and wait for network to be idle
       await page.goto(url, {
         waitUntil: 'networkidle',
-        timeout: timeout,
+        timeout: timeout - 5000, // Wait for timeout-5s, then return partial content
       });
 
       // Wait for optional selector if provided
       if (waitFor) {
-        await page.waitForSelector(waitFor, { timeout: timeout });
+        await page.waitForSelector(waitFor, { timeout: timeout - 5000 });
       }
 
       // Get the full HTML content
@@ -65,10 +90,10 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<Ext
       if (isTimeoutError(error)) {
         html = await page.content();
         if (isEmptyContent(html)) {
-          throw new Error(`Timeout after 60s while trying to load: "${url}". No content received.`);
+          throw new Error(`Page load timed out after ${Math.round((timeout - 5000) / 1000)}s: "${url}". No content was received from the server.`);
         }
         if (process.env.DEBUG) {
-          console.error(`[DEBUG] Timeout reached, using partial content (${html.length} chars)`);
+          console.error(`[DEBUG] Timeout reached after ${Math.round((timeout - 5000) / 1000)}s, using partial content (${html.length} chars)`);
         }
       } else {
         throw error;
@@ -96,15 +121,13 @@ async function scrapeUrl(url: string, options: ScraperOptions = {}): Promise<Ext
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    // Provide meaningful error messages
+    // Provide meaningful error messages with specific diagnostics
     if (errorMessage.includes('net::ERR_NAME_NOT_RESOLVED')) {
-      throw new Error(`DNS resolution failed for URL: "${url}"`);
+      throw new Error(`DNS resolution failed: Cannot resolve hostname for "${url}". Check the URL or network connection.`);
     } else if (errorMessage.includes('Timeout')) {
-      throw new Error(`Timeout after ${Math.round(timeout / 1000)}s while trying to load: "${url}"`);
-    } else if (errorMessage.includes('net::ERR_CONNECTION_REFUSED')) {
-      throw new Error(`Connection refused for URL: "${url}"`);
+      throw new Error(`Page load timed out after ${Math.round((timeout - 5000) / 1000)}s: "${url}". The page took too long to load (networkidle not reached).`);
     }
-    // Re-throw original error with context
+    // Re-throw original error with context for any other failures
     throw new Error(`Failed to scrape "${url}": ${errorMessage}`);
   } finally {
     // Clean up: close the page and browser
@@ -155,6 +178,29 @@ function isEmptyContent(html: string): boolean {
   // Check for basic empty HTML structure
   const emptyHtmlPattern = /^<\s*html[^>]*>\s*(?:<\s*head[^>]*>.*?<\/head>\s*)?(?:<\s*body[^>]*>\s*<\/body>\s*)?<\/html>$/i;
   return emptyHtmlPattern.test(trimmed);
+}
+
+/**
+ * Perform a quick browser health check to ensure Playwright can fetch HTML
+ * @returns HTML content from test endpoint, or null if failed
+ */
+async function performBrowserHealthCheck(): Promise<string | null> {
+  const testUrl = 'https://httpbin.org/html';
+  let testBrowser: Browser | null = null;
+  let testPage: Page | null = null;
+
+  try {
+    testBrowser = await chromium.launch({ headless: true });
+    testPage = await testBrowser.newPage();
+    await testPage.goto(testUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
+    const content = await testPage.content();
+    return content && content.trim().length > 10 ? content : null;
+  } catch (error) {
+    return null;
+  } finally {
+    if (testPage) await testPage.close().catch(() => {});
+    if (testBrowser) await testBrowser.close().catch(() => {});
+  }
 }
 
 export {
